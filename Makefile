@@ -9,7 +9,7 @@ build:
 	go build -o bin/worker cmd/worker/main.go
 	go build -o bin/migrate cmd/migrate/main.go
 
-run:
+run-api:
 	go run cmd/api/main.go
 
 run-worker:

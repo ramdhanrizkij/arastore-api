@@ -40,6 +40,11 @@ import (
 	userHandler "github.com/ramdhanrizkij/arastore-api/internal/features/user/handler"
 	userRepo "github.com/ramdhanrizkij/arastore-api/internal/features/user/repository"
 	userService "github.com/ramdhanrizkij/arastore-api/internal/features/user/service"
+	
+	// Feature Category
+	categoryHandler "github.com/ramdhanrizkij/arastore-api/internal/features/category/handler"
+	categoryRepo "github.com/ramdhanrizkij/arastore-api/internal/features/category/repository"
+	categoryService "github.com/ramdhanrizkij/arastore-api/internal/features/category/service" 	
 )
 
 // Server represents the HTTP server container.
@@ -137,6 +142,12 @@ func (s *Server) SetupRoutes() {
 	)
 	userHdl := userHandler.NewUserHTTPHandler(userServ, s.logger)
 	userHandler.RegisterRoutes(api, userHdl, s.db, s.config.JWT.Secret)
+	
+	// 5. Feature: Category
+	categoryRepository := categoryRepo.NewCategoryRepository(s.db)
+	categoryServ := categoryService.NewCategoryService(categoryRepository)
+	categoryHdl := categoryHandler.NewCategoryHTTPHandler(categoryServ, s.logger)
+	categoryHandler.RegisterCategoryRoutes(api, categoryHdl, s.db, s.config.JWT.Secret)
 
 	// Catch-all route for 404 Not Found
 	s.app.Use(func(c fiber.Ctx) error {
