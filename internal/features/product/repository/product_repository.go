@@ -57,3 +57,46 @@ func (r *productRepository) FindByID(ctx context.Context, id string) (*model.Pro
 
 	return &product, nil
 }
+
+// FindBySKU implements [domain.ProductRepository].
+func (r *productRepository) FindBySKU(ctx context.Context, sku string) (*model.Product, error) {
+	var product model.Product
+	if err := r.db.Where("sku = ?", sku).Preload("Category").First(&product).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.ErrNotFound
+		}
+		return nil, err
+	}
+	return &product, nil
+}
+
+// Create implements [domain.ProductRepository].
+func (r *productRepository) Create(ctx context.Context, product *model.Product) error {
+	if err := r.db.WithContext(ctx).Create(&product).Error; err != nil {
+		return apperrors.WrapError(err, "Failed to create product")
+	}
+	return nil
+}
+
+// Update implements [domain.ProductRepository].
+func (r *productRepository) Update(ctx context.Context, product *model.Product) error {
+	if err := r.db.WithContext(ctx).Save(&product).Error; err != nil {
+		return apperrors.WrapError(err, "Failed to update product")
+	}
+
+	return nil
+}
+
+// Delete implements [domain.ProductRepository].
+func (r *productRepository) Delete(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Product{})
+	if result.Error != nil {
+		return apperrors.WrapError(result.Error, "failed to delete product")
+	}
+
+	if result.RowsAffected == 0 {
+		return apperrors.ErrNotFound
+	}
+
+	return nil
+}

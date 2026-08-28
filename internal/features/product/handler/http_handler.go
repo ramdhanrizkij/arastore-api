@@ -10,6 +10,7 @@ import (
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
+	"github.com/ramdhanrizkij/arastore-api/internal/shared/validator"
 	"go.uber.org/zap"
 )
 
@@ -50,6 +51,60 @@ func (h *ProductHTTPHandler) GetByID(c fiber.Ctx) error {
 	}
 
 	return response.Success(c, "Product retrieved successfully", product)
+}
+
+func (h *ProductHTTPHandler) Create(c fiber.Ctx) error {
+	req, err := validator.ParseAndValidate[domain.CreateProductRequest](c)
+	if err != nil {
+		return nil
+	}
+
+	product, err := h.service.Create(c.Context(), req)
+	if err != nil {
+		h.handleError(c, err)
+	}
+
+	return response.Success(c, "Product created successfully", product)
+}
+
+func (h *ProductHTTPHandler) Update(c fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return response.Error(c, fiber.StatusBadRequest, "product ID are required")
+	}
+
+	if _, err := uuid.Parse(id); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid product ID format")
+	}
+
+	req, err := validator.ParseAndValidate[domain.UpdateProductRequest](c)
+	if err != nil {
+		return nil
+	}
+
+	product, err := h.service.Update(c.Context(), id, req)
+	if err != nil {
+		h.handleError(c, err)
+	}
+
+	return response.Success(c, "Product updated successfully", product)
+}
+
+func (h *ProductHTTPHandler) Delete(c fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return response.Error(c, fiber.StatusBadRequest, "Product ID are required")
+	}
+
+	if _, err := uuid.Parse(id); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid product ID format")
+	}
+
+	if err := h.service.Delete(c.Context(), id); err != nil {
+		h.handleError(c, err)
+	}
+
+	return response.Success(c, "Product delete successfully", nil)
 }
 
 func (h *ProductHTTPHandler) handleError(c fiber.Ctx, err error) error {
