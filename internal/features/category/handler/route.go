@@ -9,11 +9,11 @@ import (
 
 // RegisterCategoryRoutes registers all categories routes on the provided router group.
 func RegisterCategoryRoutes(router fiber.Router, handler *CategoryHTTPHandler, db *gorm.DB, jwtSecret string) {
-	categories := router.Group("/categories", middleware.JWTAuth(jwtSecret))
+	categories := router.Group("/categories")
 
-	categories.Get("/", middleware.RequirePermission(db, "categories.view"), handler.GetAll)
-	categories.Get("/:id", middleware.RequirePermission(db, "categories.view"), handler.GetByID)
-	categories.Post("/",handler.Create)
-	categories.Put("/:id",handler.Update)
-	categories.Delete("/:id",handler.Delete)
+	categories.Get("/", handler.GetAll)
+	categories.Get("/:id", handler.GetByID)
+	categories.Post("/", middleware.JWTAuth(jwtSecret), handler.Create)
+	categories.Put("/:id", middleware.JWTAuth(jwtSecret), handler.Update)
+	categories.Delete("/:id", middleware.JWTAuth(jwtSecret), handler.Delete)
 }

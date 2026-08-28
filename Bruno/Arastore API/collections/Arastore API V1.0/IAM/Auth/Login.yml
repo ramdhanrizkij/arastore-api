@@ -1,0 +1,66 @@
+info:
+  name: Login
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/api/v1/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "email":"superadmin@arastore.id",
+        "password":"password"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+examples:
+  - name: 200 - Success
+    request:
+      url: "{{BASE_URL}}/api/v1/auth/login"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "email":"superadmin@arastore.id",
+            "password":"password"
+          }
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:39:08 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "560"
+      body:
+        type: json
+        data: |-
+          {
+            "meta": {
+              "code": 200,
+              "message": "Login successful"
+            },
+            "data": {
+              "user": {
+                "id": "f997c301-d15a-4867-abd6-63e2953dfd74",
+                "name": "Superadmin",
+                "email": "superadmin@arastore.id",
+                "role_name": "admin",
+                "is_active": true
+              },
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjk5N2MzMDEtZDE1YS00ODY3LWFiZDYtNjNlMjk1M2RmZDc0IiwiZW1haWwiOiJzdXBlcmFkbWluQGFyYXN0b3JlLmlkIiwicm9sZV9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODgwMTA3NDgsImlhdCI6MTc4NzkyNDM0OH0.6hpV3RO_qhqT20BFLtYbeQrAISrR0Bb_zqXK6o5Cf1o",
+              "refresh_token": "077d5a7c76b02badaab87a6cb5396de27f34308217ca53fc69d9e31b2fc919bc"
+            }
+          }

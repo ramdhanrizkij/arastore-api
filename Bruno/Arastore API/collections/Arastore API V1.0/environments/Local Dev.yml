@@ -1,0 +1,11 @@
+name: Local Dev
+variables:
+  - name: BASE_URL
+    value: http://localhost:8080
+    description: ""
+  - name: ACCESS_TOKEN
+    value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZjk5N2MzMDEtZDE1YS00ODY3LWFiZDYtNjNlMjk1M2RmZDc0IiwiZW1haWwiOiJzdXBlcmFkbWluQGFyYXN0b3JlLmlkIiwicm9sZV9uYW1lIjoiYWRtaW4iLCJleHAiOjE3ODgwMTA3NDgsImlhdCI6MTc4NzkyNDM0OH0.6hpV3RO_qhqT20BFLtYbeQrAISrR0Bb_zqXK6o5Cf1o
+    description: ""
+  - name: REFRESH_TOKEN
+    value: ""
+    description: ""

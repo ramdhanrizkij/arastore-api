@@ -1,0 +1,12 @@
+opencollection: 1.0.0
+info:
+  name: "Arastore API"
+  type: workspace
+
+collections:
+  - name: "Arastore API V1.0"
+    path: "collections/Arastore API V1.0"
+
+specs:
+
+docs: ''

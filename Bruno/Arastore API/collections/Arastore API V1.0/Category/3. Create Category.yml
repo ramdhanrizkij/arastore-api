@@ -1,0 +1,131 @@
+info:
+  name: 3. Create Category
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/api/v1/categories"
+  body:
+    type: json
+    data: |-
+      {
+        "name":"Digital",
+        "description":""
+      }
+  auth:
+    type: bearer
+    token: "{{ACCESS_TOKEN}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+examples:
+  - name: 409 - Category Already Exists
+    request:
+      url: "{{BASE_URL}}/api/v1/categories"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "name":"Fashion",
+            "description":""
+          }
+    response:
+      status: 409
+      statusText: Conflict
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:42:40 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "62"
+      body:
+        type: json
+        data: |-
+          {
+            "meta": {
+              "code": 409,
+              "message": "category name already exists"
+            }
+          }
+  - name: 422 - Required
+    request:
+      url: "{{BASE_URL}}/api/v1/categories"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "name":"",
+            "description":""
+          }
+    response:
+      status: 422
+      statusText: Unprocessable Entity
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:43:04 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "129"
+      body:
+        type: json
+        data: |-
+          {
+            "errors": [
+              {
+                "field": "Name",
+                "tag": "required",
+                "message": "Field ini wajib diisi"
+              }
+            ],
+            "meta": {
+              "code": 422,
+              "message": "validation error"
+            }
+          }
+  - name: 201 - Success
+    request:
+      url: "{{BASE_URL}}/api/v1/categories"
+      method: POST
+      body:
+        type: json
+        data: |-
+          {
+            "name":"Digital",
+            "description":""
+          }
+    response:
+      status: 201
+      statusText: Created
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:43:24 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "234"
+      body:
+        type: json
+        data: |-
+          {
+            "meta": {
+              "code": 201,
+              "message": "Category created successfully"
+            },
+            "data": {
+              "id": "83f16e23-8b37-4794-90d2-cab3ff26c364",
+              "name": "Digital",
+              "description": "",
+              "created_at": "28286-08-28T20:43:24+07:00",
+              "updated_at": "28286-08-28T20:43:24+07:00"
+            }
+          }
