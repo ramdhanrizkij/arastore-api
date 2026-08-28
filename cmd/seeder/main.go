@@ -32,6 +32,7 @@ func main() {
 	err = seeder.Run(db, logger.Log,
 		seeder.Runner{Name: "roles", Fn: seeder.SeedRoles},
 		seeder.Runner{Name: "users", Fn: seeder.SeedUsers},
+		seeder.Runner{Name: "permissions", Fn: seeder.SeedPermissions},
 		seeder.Runner{Name: "addresses", Fn: seeder.SeedAddresses},
 		seeder.Runner{Name: "caategories", Fn: seeder.SeedCategories},
 		seeder.Runner{Name: "products", Fn: seeder.SeedProducts},
