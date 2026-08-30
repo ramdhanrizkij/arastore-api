@@ -12,17 +12,19 @@ import (
 
 	"github.com/ramdhanrizkij/arastore-api/internal/core/cache"
 	"github.com/ramdhanrizkij/arastore-api/internal/core/storage"
+	permissionDomain "github.com/ramdhanrizkij/arastore-api/internal/features/permission/domain"
 	permService "github.com/ramdhanrizkij/arastore-api/internal/features/permission/service"
+	roleDomain "github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
 	roleService "github.com/ramdhanrizkij/arastore-api/internal/features/role/service"
+	userDomain "github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
 	userService "github.com/ramdhanrizkij/arastore-api/internal/features/user/service"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 )
 
 func TestRoleServiceGetAllUsesCacheAfterFirstFetch(t *testing.T) {
 	repo := &fakeRoleRepository{
-		roles: []model.Role{
+		roles: []roleDomain.Role{
 			{
 				ID:          uuid.New(),
 				Name:        "admin",
@@ -54,7 +56,7 @@ func TestRoleServiceGetAllUsesCacheAfterFirstFetch(t *testing.T) {
 func TestPermissionServiceDeleteInvalidatesPermissionAndRoleCaches(t *testing.T) {
 	permissionID := uuid.New().String()
 	repo := &fakePermissionRepository{
-		permission: &model.Permission{
+		permission: &permissionDomain.Permission{
 			ID:          uuid.MustParse(permissionID),
 			Name:        "users.read",
 			Description: "Read users",
@@ -77,7 +79,7 @@ func TestPermissionServiceDeleteInvalidatesPermissionAndRoleCaches(t *testing.T)
 func TestUserServiceGetPermissionsUsesCacheAfterFirstFetch(t *testing.T) {
 	userID := uuid.New().String()
 	repo := &fakeUserRepository{
-		permissions: []model.Permission{
+		permissions: []permissionDomain.Permission{
 			{Name: "users.read"},
 			{Name: "users.update"},
 		},
@@ -99,7 +101,7 @@ func TestUserServiceGetPermissionsUsesCacheAfterFirstFetch(t *testing.T) {
 func TestUserServiceDeleteInvalidatesUserCaches(t *testing.T) {
 	userID := uuid.New().String()
 	repo := &fakeUserRepository{
-		user: &model.User{
+		user: &userDomain.User{
 			ID:        uuid.MustParse(userID),
 			Name:      "Test User",
 			Email:     "user@example.com",
@@ -199,28 +201,28 @@ func (f *fakeStorage) Close() error {
 }
 
 type fakeRoleRepository struct {
-	roles        []model.Role
+	roles        []roleDomain.Role
 	findAllCalls int
 }
 
-func (f *fakeRoleRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.Role, int64, error) {
+func (f *fakeRoleRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]roleDomain.Role, int64, error) {
 	f.findAllCalls++
 	return f.roles, int64(len(f.roles)), nil
 }
 
-func (f *fakeRoleRepository) FindByID(ctx context.Context, id string) (*model.Role, error) {
+func (f *fakeRoleRepository) FindByID(ctx context.Context, id string) (*roleDomain.Role, error) {
 	return nil, apperrors.ErrNotFound
 }
 
-func (f *fakeRoleRepository) FindByName(ctx context.Context, name string) (*model.Role, error) {
+func (f *fakeRoleRepository) FindByName(ctx context.Context, name string) (*roleDomain.Role, error) {
 	return nil, apperrors.ErrNotFound
 }
 
-func (f *fakeRoleRepository) Create(ctx context.Context, role *model.Role) error {
+func (f *fakeRoleRepository) Create(ctx context.Context, role *roleDomain.Role) error {
 	return nil
 }
 
-func (f *fakeRoleRepository) Update(ctx context.Context, role *model.Role) error {
+func (f *fakeRoleRepository) Update(ctx context.Context, role *roleDomain.Role) error {
 	return nil
 }
 
@@ -237,34 +239,34 @@ func (f *fakeRoleRepository) RemovePermissions(ctx context.Context, roleID strin
 }
 
 type fakePermissionRepository struct {
-	permission   *model.Permission
+	permission   *permissionDomain.Permission
 	deleteCalled bool
 }
 
-func (f *fakePermissionRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.Permission, int64, error) {
+func (f *fakePermissionRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]permissionDomain.Permission, int64, error) {
 	return nil, 0, nil
 }
 
-func (f *fakePermissionRepository) FindByID(ctx context.Context, id string) (*model.Permission, error) {
+func (f *fakePermissionRepository) FindByID(ctx context.Context, id string) (*permissionDomain.Permission, error) {
 	if f.permission == nil {
 		return nil, apperrors.ErrNotFound
 	}
 	return f.permission, nil
 }
 
-func (f *fakePermissionRepository) FindByName(ctx context.Context, name string) (*model.Permission, error) {
+func (f *fakePermissionRepository) FindByName(ctx context.Context, name string) (*permissionDomain.Permission, error) {
 	return nil, apperrors.ErrNotFound
 }
 
-func (f *fakePermissionRepository) FindByIDs(ctx context.Context, ids []string) ([]model.Permission, error) {
+func (f *fakePermissionRepository) FindByIDs(ctx context.Context, ids []string) ([]permissionDomain.Permission, error) {
 	return nil, nil
 }
 
-func (f *fakePermissionRepository) Create(ctx context.Context, permission *model.Permission) error {
+func (f *fakePermissionRepository) Create(ctx context.Context, permission *permissionDomain.Permission) error {
 	return nil
 }
 
-func (f *fakePermissionRepository) Update(ctx context.Context, permission *model.Permission) error {
+func (f *fakePermissionRepository) Update(ctx context.Context, permission *permissionDomain.Permission) error {
 	return nil
 }
 
@@ -274,35 +276,35 @@ func (f *fakePermissionRepository) Delete(ctx context.Context, id string) error 
 }
 
 type fakeUserRepository struct {
-	user                *model.User
-	permissions         []model.Permission
+	user                *userDomain.User
+	permissions         []permissionDomain.Permission
 	deleteCalled        bool
 	getPermissionsCalls int
 }
 
-func (f *fakeUserRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.User, int64, error) {
+func (f *fakeUserRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]userDomain.User, int64, error) {
 	if f.user == nil {
 		return nil, 0, nil
 	}
-	return []model.User{*f.user}, 1, nil
+	return []userDomain.User{*f.user}, 1, nil
 }
 
-func (f *fakeUserRepository) FindByID(ctx context.Context, id string) (*model.User, error) {
+func (f *fakeUserRepository) FindByID(ctx context.Context, id string) (*userDomain.User, error) {
 	if f.user == nil {
 		return nil, apperrors.ErrNotFound
 	}
 	return f.user, nil
 }
 
-func (f *fakeUserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
+func (f *fakeUserRepository) FindByEmail(ctx context.Context, email string) (*userDomain.User, error) {
 	return nil, apperrors.ErrNotFound
 }
 
-func (f *fakeUserRepository) Create(ctx context.Context, user *model.User) error {
+func (f *fakeUserRepository) Create(ctx context.Context, user *userDomain.User) error {
 	return nil
 }
 
-func (f *fakeUserRepository) Update(ctx context.Context, user *model.User) error {
+func (f *fakeUserRepository) Update(ctx context.Context, user *userDomain.User) error {
 	return nil
 }
 
@@ -311,7 +313,7 @@ func (f *fakeUserRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (f *fakeUserRepository) GetPermissions(ctx context.Context, userID string) ([]model.Permission, error) {
+func (f *fakeUserRepository) GetPermissions(ctx context.Context, userID string) ([]permissionDomain.Permission, error) {
 	f.getPermissionsCalls++
 	return f.permissions, nil
 }

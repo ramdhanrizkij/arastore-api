@@ -42,12 +42,15 @@ func (h *CategoryHTTPHandler) GetByID(c fiber.Ctx) error {
 }
 
 func (h *CategoryHTTPHandler) Create(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.CreateCategoryRequest](c)
-	if err != nil {
-		return nil
+	var req domain.CreateCategoryRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	category, err := h.service.Create(c.Context(), req)
+	category, err := h.service.Create(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -57,12 +60,15 @@ func (h *CategoryHTTPHandler) Create(c fiber.Ctx) error {
 
 func (h *CategoryHTTPHandler) Update(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.UpdateCategoryRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdateCategoryRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	category, err := h.service.Update(c.Context(), id, req)
+	category, err := h.service.Update(c.Context(), id, &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}

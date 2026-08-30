@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/core/cache"
+	"github.com/ramdhanrizkij/arastore-api/internal/core/middleware"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
@@ -90,7 +90,7 @@ func (s *roleService) Create(ctx context.Context, req *domain.CreateRoleRequest)
 		return nil, apperrors.WrapError(err, "failed to check role name")
 	}
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "role name already exists", nil)
+		return nil, apperrors.Conflict("role name already exists")
 	}
 
 	guardName := req.GuardName
@@ -98,7 +98,7 @@ func (s *roleService) Create(ctx context.Context, req *domain.CreateRoleRequest)
 		guardName = "api"
 	}
 
-	role := &model.Role{
+	role := &domain.Role{
 		Name:        req.Name,
 		Description: req.Description,
 		GuardName:   guardName,
@@ -127,7 +127,7 @@ func (s *roleService) Update(ctx context.Context, id string, req *domain.UpdateR
 			return nil, apperrors.WrapError(err, "failed to check role name")
 		}
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "role name already exists", nil)
+			return nil, apperrors.Conflict("role name already exists")
 		}
 	}
 
@@ -184,8 +184,8 @@ func (s *roleService) RemovePermissions(ctx context.Context, id string, req *dom
 	return nil
 }
 
-// toRoleResponse maps a model.Role to a domain.RoleResponse.
-func toRoleResponse(r model.Role) domain.RoleResponse {
+// toRoleResponse maps a domain.Role to a domain.RoleResponse.
+func toRoleResponse(r domain.Role) domain.RoleResponse {
 	perms := make([]domain.PermissionResponse, 0, len(r.Permissions))
 	for _, p := range r.Permissions {
 		perms = append(perms, domain.PermissionResponse{
@@ -229,4 +229,5 @@ func (s *roleService) invalidateRoleCache(ctx context.Context) {
 	if err := s.cache.DeleteByPrefix(ctx, "roles:"); err != nil {
 		s.log.Warn("failed to invalidate role cache", zap.Error(err))
 	}
+	middleware.ClearPermissionCache()
 }

@@ -30,7 +30,7 @@ func (h *ProductHTTPHandler) GetAll(c fiber.Ctx) error {
 	pq := pagination.NewPaginationQuery(c)
 	products, meta, err := h.service.GetAll(c.Context(), pq)
 	if err != nil {
-		h.handleError(c, err)
+		return h.handleError(c, err)
 	}
 
 	return response.SuccessWithPagination(c, "Product retrieved successfully", products, meta)
@@ -47,24 +47,27 @@ func (h *ProductHTTPHandler) GetByID(c fiber.Ctx) error {
 	}
 	product, err := h.service.GetByID(c.Context(), id)
 	if err != nil {
-		h.handleError(c, err)
+		return h.handleError(c, err)
 	}
 
 	return response.Success(c, "Product retrieved successfully", product)
 }
 
 func (h *ProductHTTPHandler) Create(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.CreateProductRequest](c)
-	if err != nil {
-		return nil
+	var req domain.CreateProductRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	product, err := h.service.Create(c.Context(), req)
+	product, err := h.service.Create(c.Context(), &req)
 	if err != nil {
-		h.handleError(c, err)
+		return h.handleError(c, err)
 	}
 
-	return response.Success(c, "Product created successfully", product)
+	return response.Created(c, "Product created successfully", product)
 }
 
 func (h *ProductHTTPHandler) Update(c fiber.Ctx) error {
@@ -77,14 +80,17 @@ func (h *ProductHTTPHandler) Update(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid product ID format")
 	}
 
-	req, err := validator.ParseAndValidate[domain.UpdateProductRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdateProductRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	product, err := h.service.Update(c.Context(), id, req)
+	product, err := h.service.Update(c.Context(), id, &req)
 	if err != nil {
-		h.handleError(c, err)
+		return h.handleError(c, err)
 	}
 
 	return response.Success(c, "Product updated successfully", product)
@@ -101,7 +107,7 @@ func (h *ProductHTTPHandler) Delete(c fiber.Ctx) error {
 	}
 
 	if err := h.service.Delete(c.Context(), id); err != nil {
-		h.handleError(c, err)
+		return h.handleError(c, err)
 	}
 
 	return response.Success(c, "Product delete successfully", nil)

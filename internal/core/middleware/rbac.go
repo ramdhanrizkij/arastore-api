@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"gorm.io/gorm"
 
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
 )
 
@@ -84,26 +83,36 @@ func getRolePermissions(db *gorm.DB, roleName string) ([]string, error) {
 		}
 	}
 
-	// Cache miss or expired - query DB
-	var role model.Role
-	err := db.Preload("Permissions").Where("name = ?", roleName).First(&role).Error
+	// Cache miss or expired - resolve permission names via a JOIN without
+	// depending on any entity struct, keeping this layer free of feature types.
+	var permNames []string
+	err := db.Table("permissions AS p").
+		Joins("JOIN role_permissions AS rp ON rp.permission_id = p.id").
+		Joins("JOIN roles AS r ON r.id = rp.role_id").
+		Where("r.name = ?", roleName).
+		Pluck("p.name", &permNames).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return []string{}, nil
-		}
 		return nil, err
 	}
-
-	permNames := make([]string, 0, len(role.Permissions))
-	for _, p := range role.Permissions {
-		permNames = append(permNames, p.Name)
+	if permNames == nil {
+		permNames = []string{}
 	}
 
 	// Update cache
 	permCache.Store(roleName, cachedPermissions{
 		permissions: permNames,
-		expiry:      time.Now().Add(cacheTTL),
+		expiry:       time.Now().Add(cacheTTL),
 	})
 
 	return permNames, nil
+}
+
+// ClearPermissionCache flushes the in-memory role -> permissions cache so that
+// role/permission mutations take effect immediately instead of waiting for the
+// TTL to expire. Call it after any role or permission change.
+func ClearPermissionCache() {
+	permCache.Range(func(k, _ interface{}) bool {
+		permCache.Delete(k)
+		return true
+	})
 }

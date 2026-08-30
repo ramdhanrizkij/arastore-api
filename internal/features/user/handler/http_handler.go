@@ -66,12 +66,15 @@ func (h *UserHTTPHandler) UpdateProfile(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusUnauthorized, "unauthorized")
 	}
 
-	req, err := validator.ParseAndValidate[domain.UpdateProfileRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdateProfileRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	user, err := h.service.UpdateProfile(c.Context(), claims.UserID, req)
+	user, err := h.service.UpdateProfile(c.Context(), claims.UserID, &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -95,12 +98,15 @@ func (h *UserHTTPHandler) GetMePermissions(c fiber.Ctx) error {
 
 // Create creates a new user.
 func (h *UserHTTPHandler) Create(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.CreateUserRequest](c)
-	if err != nil {
-		return nil // validator already returns the response
+	var req domain.CreateUserRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	user, err := h.service.Create(c.Context(), req)
+	user, err := h.service.Create(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -110,12 +116,15 @@ func (h *UserHTTPHandler) Create(c fiber.Ctx) error {
 // Update updates an existing user.
 func (h *UserHTTPHandler) Update(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.UpdateUserRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdateUserRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	user, err := h.service.Update(c.Context(), id, req)
+	user, err := h.service.Update(c.Context(), id, &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}

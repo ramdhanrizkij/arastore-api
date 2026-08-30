@@ -46,11 +46,14 @@ func (h *PermissionHTTPHandler) GetByID(c fiber.Ctx) error {
 
 // Create creates a new permission.
 func (h *PermissionHTTPHandler) Create(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.CreatePermissionRequest](c)
-	if err != nil {
-		return nil
+	var req domain.CreatePermissionRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	perm, err := h.service.Create(c.Context(), req)
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	perm, err := h.service.Create(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -60,11 +63,14 @@ func (h *PermissionHTTPHandler) Create(c fiber.Ctx) error {
 // Update updates an existing permission.
 func (h *PermissionHTTPHandler) Update(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.UpdatePermissionRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdatePermissionRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	perm, err := h.service.Update(c.Context(), id, req)
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	perm, err := h.service.Update(c.Context(), id, &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}

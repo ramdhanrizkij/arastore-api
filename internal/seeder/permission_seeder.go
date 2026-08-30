@@ -1,12 +1,13 @@
 package seeder
 
 import (
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	permissionDomain "github.com/ramdhanrizkij/arastore-api/internal/features/permission/domain"
+	roleDomain "github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
 	"gorm.io/gorm"
 )
 
 func SeedPermissions(db *gorm.DB) error {
-	permissions := []model.Permission{
+	permissions := []permissionDomain.Permission{
 		{Name: "roles.view", Description: "View roles list and details"},
 		{Name: "roles.create", Description: "Create new roles"},
 		{Name: "roles.edit", Description: "Update existing roles"},
@@ -38,12 +39,12 @@ func SeedPermissions(db *gorm.DB) error {
 	}
 
 	// Assign all permissions to superadmin
-	var superadmin model.Role
+	var superadmin roleDomain.Role
 	if err := db.Where("name = ?", "superadmin").First(&superadmin).Error; err != nil {
 		return err
 	}
 
-	var allPermissions []model.Permission
+	var allPermissions []permissionDomain.Permission
 	if err := db.Find(&allPermissions).Error; err != nil {
 		return err
 	}
@@ -53,12 +54,12 @@ func SeedPermissions(db *gorm.DB) error {
 	}
 
 	// Assign admin permission
-	var admin model.Role
+	var admin roleDomain.Role
 	if err := db.Where("name = ?", "admin").First(&admin).Error; err != nil {
 		return err
 	}
 
-	var adminPermissions []model.Permission
+	var adminPermissions []permissionDomain.Permission
 	if err := db.Where("name IN ?", []string{
 		"roles.view",
 		"permissions.view",
@@ -84,12 +85,12 @@ func SeedPermissions(db *gorm.DB) error {
 	}
 
 	// Assign user permission
-	var user model.Role
+	var user roleDomain.Role
 	if err := db.Where("name=?", "user").First(&user).Error; err != nil {
 		return err
 	}
 
-	var userPermissions []model.Permission
+	var userPermissions []permissionDomain.Permission
 	if err := db.Where("name IN ?", []string{
 		"roles.view",
 		"permissions.view",

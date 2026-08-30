@@ -47,11 +47,14 @@ func (h *RoleHTTPHandler) GetByID(c fiber.Ctx) error {
 
 // Create creates a new role.
 func (h *RoleHTTPHandler) Create(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.CreateRoleRequest](c)
-	if err != nil {
-		return nil
+	var req domain.CreateRoleRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	role, err := h.service.Create(c.Context(), req)
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	role, err := h.service.Create(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -61,11 +64,14 @@ func (h *RoleHTTPHandler) Create(c fiber.Ctx) error {
 // Update updates an existing role.
 func (h *RoleHTTPHandler) Update(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.UpdateRoleRequest](c)
-	if err != nil {
-		return nil
+	var req domain.UpdateRoleRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	role, err := h.service.Update(c.Context(), id, req)
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	role, err := h.service.Update(c.Context(), id, &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -84,11 +90,14 @@ func (h *RoleHTTPHandler) Delete(c fiber.Ctx) error {
 // AssignPermissions assigns permissions to a role.
 func (h *RoleHTTPHandler) AssignPermissions(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.AssignPermissionsRequest](c)
-	if err != nil {
-		return nil
+	var req domain.AssignPermissionsRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	if err := h.service.AssignPermissions(c.Context(), id, req); err != nil {
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	if err := h.service.AssignPermissions(c.Context(), id, &req); err != nil {
 		return h.handleError(c, err)
 	}
 	return response.Success(c, "Permissions assigned to role successfully", nil)
@@ -97,11 +106,14 @@ func (h *RoleHTTPHandler) AssignPermissions(c fiber.Ctx) error {
 // RemovePermissions removes permissions from a role.
 func (h *RoleHTTPHandler) RemovePermissions(c fiber.Ctx) error {
 	id := c.Params("id")
-	req, err := validator.ParseAndValidate[domain.AssignPermissionsRequest](c)
-	if err != nil {
-		return nil
+	var req domain.AssignPermissionsRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
 	}
-	if err := h.service.RemovePermissions(c.Context(), id, req); err != nil {
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
+	}
+	if err := h.service.RemovePermissions(c.Context(), id, &req); err != nil {
 		return h.handleError(c, err)
 	}
 	return response.Success(c, "Permissions removed from role successfully", nil)

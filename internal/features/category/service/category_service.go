@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/features/category/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
@@ -52,7 +51,7 @@ func (s *categoryService) GetByID(ctx context.Context, id string) (*domain.Categ
 	return &resp, nil
 }
 
-func toCategoryResponse(r model.Category) domain.CategoryResponse {
+func toCategoryResponse(r domain.Category) domain.CategoryResponse {
 	return domain.CategoryResponse{
 		ID:          r.ID.String(),
 		Name:        r.Name,
@@ -71,10 +70,10 @@ func (s *categoryService) Create(ctx context.Context, req *domain.CreateCategory
 	}
 
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "category name already exists", nil)
+		return nil, apperrors.Conflict("category name already exists")
 	}
 
-	category := &model.Category{
+	category := &domain.Category{
 		Name:        req.Name,
 		Description: req.Description,
 	}
@@ -102,7 +101,7 @@ func (s *categoryService) Update(ctx context.Context, id string, req *domain.Upd
 		}
 
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "category name already exists", nil)
+			return nil, apperrors.Conflict("category name already exists")
 		}
 	}
 
@@ -122,10 +121,10 @@ func (s *categoryService) Delete(ctx context.Context, id string) error {
 	if _, err := s.repo.FindByID(ctx, id); err != nil {
 		return err
 	}
-	
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return err
 	}
-	
+
 	return nil
 }

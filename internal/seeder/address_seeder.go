@@ -1,17 +1,17 @@
 package seeder
 
 import (
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	userDomain "github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
 	"gorm.io/gorm"
 )
 
 func SeedAddresses(db *gorm.DB) error {
-	var user model.User
+	var user userDomain.User
 	if err := db.Where("email=?", "budi@arastore.id").First(&user).Error; err != nil {
-		return err		
+		return err
 	}
 
-	addresses := []model.Address{
+	addresses := []userDomain.Address{
 		{
 			UserID:        user.ID,
 			Label:         "Rumah",
@@ -36,9 +36,9 @@ func SeedAddresses(db *gorm.DB) error {
 
 	for _, addr := range addresses {
 		var count int64
-		db.Model(&model.Address{}).Where("user_id=? AND label=?", addr.UserID, addr.Label).Count(&count)
+		db.Model(&userDomain.Address{}).Where("user_id=? AND label=?", addr.UserID, addr.Label).Count(&count)
 		if count == 0 {
-			if err := db.Create(&addr).Error; err!=nil{
+			if err := db.Create(&addr).Error; err != nil {
 				return err
 			}
 		}

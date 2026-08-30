@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/features/product/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
@@ -62,20 +61,20 @@ func (s *productService) Create(ctx context.Context, req *domain.CreateProductRe
 	}
 
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "product with that SKU already exists", nil)
+		return nil, apperrors.Conflict("product with that SKU already exists")
 	}
 
 	categoryID, err := uuid.Parse(req.CategoryID)
 	if err != nil {
-		return nil, apperrors.NewAppError(422, "category_id format not valid", nil)
+		return nil, apperrors.Unprocessable("category_id format not valid")
 	}
 
-	status := model.ProductStatus(req.Status)
+	status := domain.ProductStatus(req.Status)
 	if status == "" {
-		status = model.ProductStatusDraft
+		status = domain.ProductStatusDraft
 	}
 
-	product := &model.Product{
+	product := &domain.Product{
 		Name:        req.Name,
 		CategoryID:  categoryID,
 		SKU:         req.SKU,
@@ -90,7 +89,12 @@ func (s *productService) Create(ctx context.Context, req *domain.CreateProductRe
 		return nil, err
 	}
 
-	resp := toProductResponse(*product)
+	created, err := s.repo.FindByID(ctx, product.ID.String())
+	if err != nil {
+		return nil, apperrors.WrapError(err, "failed to fetch created product")
+	}
+
+	resp := toProductResponse(*created)
 	return &resp, nil
 }
 
@@ -108,13 +112,13 @@ func (s *productService) Update(ctx context.Context, id string, req *domain.Upda
 		}
 
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "product sku already exists", nil)
+			return nil, apperrors.Conflict("product sku already exists")
 		}
 	}
 
 	categoryID, err := uuid.Parse(req.CategoryID)
 	if err != nil {
-		return nil, apperrors.NewAppError(422, "category_id format are not valid", nil)
+		return nil, apperrors.Unprocessable("category_id format are not valid")
 	}
 
 	product.CategoryID = categoryID
@@ -124,7 +128,7 @@ func (s *productService) Update(ctx context.Context, id string, req *domain.Upda
 	product.Price = req.Price
 	product.Stock = req.Stock
 	product.Weight = req.Weight
-	product.Status = model.ProductStatus(req.Status)
+	product.Status = domain.ProductStatus(req.Status)
 
 	if err := s.repo.Update(ctx, product); err != nil {
 		return nil, err
@@ -147,15 +151,11 @@ func (s *productService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func toProductResponse(r model.Product) domain.ProductResponse {
-	return domain.ProductResponse{
+func toProductResponse(r domain.Product) domain.ProductResponse {
+	resp := domain.ProductResponse{
 		ID:         r.ID.String(),
 		CategoryID: r.CategoryID.String(),
-		Category: &domain.ProductCategoryResponse{
-			ID:          r.Category.ID.String(),
-			Name:        r.Category.Name,
-			Description: r.Category.Description,
-		},
+		Category:   nil,
 		SKU:         r.SKU,
 		Name:        r.Name,
 		Description: r.Description,
@@ -166,4 +166,14 @@ func toProductResponse(r model.Product) domain.ProductResponse {
 		CreatedAt:   r.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:   r.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
+
+	if r.Category != nil {
+		resp.Category = &domain.ProductCategoryResponse{
+			ID:          r.Category.ID.String(),
+			Name:        r.Category.Name,
+			Description: r.Category.Description,
+		}
+	}
+
+	return resp
 }

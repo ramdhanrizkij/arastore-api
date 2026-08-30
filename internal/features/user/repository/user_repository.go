@@ -6,8 +6,8 @@ import (
 
 	"gorm.io/gorm"
 
+	permissionDomain "github.com/ramdhanrizkij/arastore-api/internal/features/permission/domain"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 )
@@ -21,11 +21,11 @@ func NewUserRepository(db *gorm.DB) domain.UserRepository {
 	return &userRepository{db: db}
 }
 
-func (r *userRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.User, int64, error) {
-	var users []model.User
+func (r *userRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]domain.User, int64, error) {
+	var users []domain.User
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.User{}).Preload("Role")
+	query := r.db.WithContext(ctx).Model(&domain.User{}).Preload("Role")
 
 	if pq.Search != "" {
 		searchTerm := "%" + pq.Search + "%"
@@ -47,8 +47,8 @@ func (r *userRepository) FindAll(ctx context.Context, pq *pagination.PaginationQ
 	return users, total, nil
 }
 
-func (r *userRepository) FindByID(ctx context.Context, id string) (*model.User, error) {
-	var user model.User
+func (r *userRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
+	var user domain.User
 	result := r.db.WithContext(ctx).Preload("Role").Where("id = ?", id).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -59,8 +59,8 @@ func (r *userRepository) FindByID(ctx context.Context, id string) (*model.User, 
 	return &user, nil
 }
 
-func (r *userRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	var user model.User
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+	var user domain.User
 	result := r.db.WithContext(ctx).Preload("Role").Where("email = ?", email).First(&user)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -71,14 +71,14 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*model.
 	return &user, nil
 }
 
-func (r *userRepository) Create(ctx context.Context, user *model.User) error {
+func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
 		return apperrors.WrapError(err, "failed to create user")
 	}
 	return nil
 }
 
-func (r *userRepository) Update(ctx context.Context, user *model.User) error {
+func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
 		return apperrors.WrapError(err, "failed to update user")
 	}
@@ -86,7 +86,7 @@ func (r *userRepository) Update(ctx context.Context, user *model.User) error {
 }
 
 func (r *userRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.User{})
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&domain.User{})
 	if result.Error != nil {
 		return apperrors.WrapError(result.Error, "failed to delete user")
 	}
@@ -96,8 +96,8 @@ func (r *userRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *userRepository) GetPermissions(ctx context.Context, userID string) ([]model.Permission, error) {
-	var user model.User
+func (r *userRepository) GetPermissions(ctx context.Context, userID string) ([]permissionDomain.Permission, error) {
+	var user domain.User
 	err := r.db.WithContext(ctx).
 		Preload("Role.Permissions").
 		Where("id = ?", userID).
@@ -111,7 +111,7 @@ func (r *userRepository) GetPermissions(ctx context.Context, userID string) ([]m
 	}
 
 	if user.Role == nil {
-		return []model.Permission{}, nil
+		return []permissionDomain.Permission{}, nil
 	}
 
 	return user.Role.Permissions, nil

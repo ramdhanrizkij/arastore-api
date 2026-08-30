@@ -8,7 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/features/auth/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	roleDomain "github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
+	userDomain "github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 )
 
@@ -24,8 +25,8 @@ func NewAuthRepository(db *gorm.DB) domain.AuthRepository {
 
 // FindUserByEmail retrieves a user by email address, preloading the associated Role.
 // Returns ErrNotFound if no matching user exists.
-func (r *authRepository) FindUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	var user model.User
+func (r *authRepository) FindUserByEmail(ctx context.Context, email string) (*userDomain.User, error) {
+	var user userDomain.User
 	result := r.db.WithContext(ctx).
 		Preload("Role").
 		Where("email = ?", email).
@@ -42,7 +43,7 @@ func (r *authRepository) FindUserByEmail(ctx context.Context, email string) (*mo
 }
 
 // CreateUser inserts a new user record into the database.
-func (r *authRepository) CreateUser(ctx context.Context, user *model.User) error {
+func (r *authRepository) CreateUser(ctx context.Context, user *userDomain.User) error {
 	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
 		return apperrors.WrapError(err, "failed to create user")
 	}
@@ -51,8 +52,8 @@ func (r *authRepository) CreateUser(ctx context.Context, user *model.User) error
 
 // FindRoleByName retrieves a role by its name.
 // Returns ErrNotFound if no matching role exists.
-func (r *authRepository) FindRoleByName(ctx context.Context, name string) (*model.Role, error) {
-	var role model.Role
+func (r *authRepository) FindRoleByName(ctx context.Context, name string) (*roleDomain.Role, error) {
+	var role roleDomain.Role
 	result := r.db.WithContext(ctx).
 		Where("name = ?", name).
 		First(&role)
@@ -68,7 +69,7 @@ func (r *authRepository) FindRoleByName(ctx context.Context, name string) (*mode
 }
 
 // CreateRefreshToken inserts a hashed refresh token record.
-func (r *authRepository) CreateRefreshToken(ctx context.Context, token *model.RefreshToken) error {
+func (r *authRepository) CreateRefreshToken(ctx context.Context, token *domain.RefreshToken) error {
 	if err := r.db.WithContext(ctx).Create(token).Error; err != nil {
 		return apperrors.WrapError(err, "failed to create refresh token")
 	}
@@ -76,8 +77,8 @@ func (r *authRepository) CreateRefreshToken(ctx context.Context, token *model.Re
 }
 
 // FindRefreshTokenByHash retrieves a refresh token record by its hashed token value.
-func (r *authRepository) FindRefreshTokenByHash(ctx context.Context, tokenHash string) (*model.RefreshToken, error) {
-	var token model.RefreshToken
+func (r *authRepository) FindRefreshTokenByHash(ctx context.Context, tokenHash string) (*domain.RefreshToken, error) {
+	var token domain.RefreshToken
 	result := r.db.WithContext(ctx).
 		Preload("User").
 		Preload("User.Role").
@@ -98,7 +99,7 @@ func (r *authRepository) FindRefreshTokenByHash(ctx context.Context, tokenHash s
 func (r *authRepository) RevokeRefreshToken(ctx context.Context, id string) error {
 	now := time.Now()
 	result := r.db.WithContext(ctx).
-		Model(&model.RefreshToken{}).
+		Model(&domain.RefreshToken{}).
 		Where("id = ? AND revoked_at IS NULL", id).
 		Update("revoked_at", now)
 
@@ -115,7 +116,7 @@ func (r *authRepository) RevokeRefreshToken(ctx context.Context, id string) erro
 func (r *authRepository) CleanupExpiredTokens(ctx context.Context) error {
 	if err := r.db.WithContext(ctx).
 		Where("expires_at < ? OR revoked_at IS NOT NULL", time.Now()).
-		Delete(&model.RefreshToken{}).Error; err != nil {
+		Delete(&domain.RefreshToken{}).Error; err != nil {
 		return apperrors.WrapError(err, "failed to cleanup expired refresh tokens")
 	}
 	return nil
