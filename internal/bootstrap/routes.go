@@ -29,6 +29,7 @@ func SetupRoutes(app *fiber.App, deps *Dependencies) {
 	deps.UserModule.RegisterRoutes(api, deps.DB, deps.JWTSecret)
 	deps.CategoryModule.RegisterRoutes(api, deps.DB, deps.JWTSecret)
 	deps.ProductModule.RegisterRoutes(api, deps.DB, deps.JWTSecret)
+	deps.MediaModule.RegisterRoutes(api, deps.DB, deps.JWTSecret)
 
 	app.Use(func(c fiber.Ctx) error {
 		return response.Error(c, fiber.StatusNotFound, "route not found")

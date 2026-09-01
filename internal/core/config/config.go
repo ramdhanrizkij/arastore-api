@@ -60,6 +60,7 @@ type RedisConfig struct {
 type StorageConfig struct {
 	Provider       string `env:"STORAGE_PROVIDER" envDefault:"local"`
 	DefaultBucket  string `env:"STORAGE_DEFAULT_BUCKET" envDefault:"uploads"`
+	MediaBucket    string `env:"STORAGE_MEDIA_BUCKET" envDefault:"media"`
 	BucketsRaw     string `env:"STORAGE_BUCKETS" envDefault:"uploads"`
 	LocalPath      string `env:"STORAGE_LOCAL_PATH" envDefault:"storage"`
 	BaseURL        string `env:"STORAGE_BASE_URL" envDefault:"/storage"`
@@ -92,6 +93,7 @@ func (s StorageConfig) Buckets() []string {
 		add(bucket)
 	}
 	add(s.DefaultBucket)
+	add(s.MediaBucket)
 
 	if len(buckets) == 0 {
 		return []string{"uploads"}

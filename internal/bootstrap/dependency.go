@@ -34,6 +34,8 @@ import (
 	"github.com/ramdhanrizkij/arastore-api/internal/features/user"
 	userRepo "github.com/ramdhanrizkij/arastore-api/internal/features/user/repository"
 	userService "github.com/ramdhanrizkij/arastore-api/internal/features/user/service"
+
+	"github.com/ramdhanrizkij/arastore-api/internal/features/media"
 )
 
 // Dependencies is the composition root: it holds all wired feature modules plus
@@ -53,6 +55,7 @@ type Dependencies struct {
 	UserModule       *user.Module
 	CategoryModule   *category.Module
 	ProductModule    *product.Module
+	MediaModule      *media.Module
 }
 
 // NewDependencies wires every feature (repository -> service -> module) in a
@@ -98,6 +101,9 @@ func NewDependencies(
 	productSvc := productService.NewProductService(productRepository)
 	productMod := product.NewModule(productSvc, logger)
 
+	// Media
+	mediaMod := media.NewModule(logger)
+
 	return &Dependencies{
 		DB:        db,
 		Cache:     cacheClient,
@@ -113,6 +119,7 @@ func NewDependencies(
 		UserModule:       userMod,
 		CategoryModule:   categoryMod,
 		ProductModule:    productMod,
+		MediaModule:      mediaMod,
 	}
 }
 
