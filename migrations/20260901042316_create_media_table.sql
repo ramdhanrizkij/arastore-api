@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS media(
     file_size BIGINT,
     width int,
     height int,
+    is_temporary BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
