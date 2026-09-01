@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -9,10 +8,10 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/recover"
-	"github.com/gofiber/fiber/v3/middleware/static"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/ramdhanrizkij/arastore-api/internal/bootstrap"
 	"github.com/ramdhanrizkij/arastore-api/internal/core/cache"
 	"github.com/ramdhanrizkij/arastore-api/internal/core/config"
 	"github.com/ramdhanrizkij/arastore-api/internal/core/middleware"
@@ -20,46 +19,21 @@ import (
 	"github.com/ramdhanrizkij/arastore-api/internal/core/worker"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
-
-	// Feature Auth
-	authHandler "github.com/ramdhanrizkij/arastore-api/internal/features/auth/handler"
-	authRepo "github.com/ramdhanrizkij/arastore-api/internal/features/auth/repository"
-	authService "github.com/ramdhanrizkij/arastore-api/internal/features/auth/service"
-
-	// Feature Role
-	roleHandler "github.com/ramdhanrizkij/arastore-api/internal/features/role/handler"
-	roleRepo "github.com/ramdhanrizkij/arastore-api/internal/features/role/repository"
-	roleService "github.com/ramdhanrizkij/arastore-api/internal/features/role/service"
-
-	// Feature Permission
-	permHandler "github.com/ramdhanrizkij/arastore-api/internal/features/permission/handler"
-	permRepo "github.com/ramdhanrizkij/arastore-api/internal/features/permission/repository"
-	permService "github.com/ramdhanrizkij/arastore-api/internal/features/permission/service"
-
-	// Feature User
-	userHandler "github.com/ramdhanrizkij/arastore-api/internal/features/user/handler"
-	userRepo "github.com/ramdhanrizkij/arastore-api/internal/features/user/repository"
-	userService "github.com/ramdhanrizkij/arastore-api/internal/features/user/service"
-	
-	// Feature Category
-	categoryHandler "github.com/ramdhanrizkij/arastore-api/internal/features/category/handler"
-	categoryRepo "github.com/ramdhanrizkij/arastore-api/internal/features/category/repository"
-	categoryService "github.com/ramdhanrizkij/arastore-api/internal/features/category/service" 	
 )
 
-// Server represents the HTTP server container.
+// Server represents the HTTP server container. It owns the Fiber app, the wired
+// feature dependencies, and the server lifecycle. All feature wiring and route
+// registration lives in internal/bootstrap.
 type Server struct {
-	app       *fiber.App
-	db        *gorm.DB
-	cache     cache.Client
-	storage   storage.Provider
-	config    *config.Config
-	logger    *zap.Logger
-	worker    *worker.WorkerPool
-	scheduler *worker.Scheduler
+	app    *fiber.App
+	deps   *bootstrap.Dependencies
+	config *config.Config
+	logger *zap.Logger
 }
 
-// NewServer initializes the Fiber application and its global settings.
+// NewServer initializes the Fiber application, registers global middleware,
+// builds shared infrastructure (cache, storage) and the dependency graph, and
+// returns a Server ready to have its routes set up.
 func NewServer(cfg *config.Config, db *gorm.DB, logger *zap.Logger, wp *worker.WorkerPool, sched *worker.Scheduler) (*Server, error) {
 	app := fiber.New(fiber.Config{
 		AppName:      cfg.App.Name,
@@ -84,75 +58,19 @@ func NewServer(cfg *config.Config, db *gorm.DB, logger *zap.Logger, wp *worker.W
 		return nil, err
 	}
 
+	deps := bootstrap.NewDependencies(cfg, db, cacheClient, storageProvider, wp, logger)
+
 	return &Server{
-		app:       app,
-		db:        db,
-		cache:     cacheClient,
-		storage:   storageProvider,
-		config:    cfg,
-		logger:    logger,
-		worker:    wp,
-		scheduler: sched,
+		app:    app,
+		deps:   deps,
+		config: cfg,
+		logger: logger,
 	}, nil
 }
 
-// SetupRoutes handles the Dependency Injection and route registration for all modules.
+// SetupRoutes registers all application routes via the bootstrap composition root.
 func (s *Server) SetupRoutes() {
-	if s.storage.ProviderName() == storage.ProviderLocal {
-		s.app.Get(s.storageBaseURL()+"/*", static.New(s.storageLocalPath()))
-	}
-
-	api := s.app.Group("/api/v1")
-	api.Get("/health", s.healthCheck)
-
-	// 1. Feature: Auth
-	authRepository := authRepo.NewAuthRepository(s.db)
-	authServ := authService.NewAuthService(
-		authRepository,
-		s.worker,
-		s.config.JWT.Secret,
-		s.config.JWT.ExpiryHours,
-		s.config.JWT.RefreshExpiryHours,
-		s.logger,
-	)
-	authHdl := authHandler.NewAuthHTTPHandler(authServ, s.logger)
-	authHandler.RegisterRoutes(api, authHdl)
-
-	// 2. Feature: Role
-	roleRepository := roleRepo.NewRoleRepository(s.db)
-	roleServ := roleService.NewRoleService(roleRepository, s.cache, s.cacheTTL(), s.logger)
-	roleHdl := roleHandler.NewRoleHTTPHandler(roleServ, s.logger)
-	roleHandler.RegisterRoutes(api, roleHdl, s.db, s.config.JWT.Secret)
-
-	// 3. Feature: Permission
-	permRepository := permRepo.NewPermissionRepository(s.db)
-	permServ := permService.NewPermissionService(permRepository, s.cache, s.cacheTTL(), s.logger)
-	permHdl := permHandler.NewPermissionHTTPHandler(permServ, s.logger)
-	permHandler.RegisterRoutes(api, permHdl, s.db, s.config.JWT.Secret)
-
-	// 4. Feature: User
-	userRepository := userRepo.NewUserRepository(s.db)
-	userServ := userService.NewUserService(
-		userRepository,
-		s.cache,
-		s.storage,
-		s.config.Storage.DefaultBucket,
-		s.cacheTTL(),
-		s.logger,
-	)
-	userHdl := userHandler.NewUserHTTPHandler(userServ, s.logger)
-	userHandler.RegisterRoutes(api, userHdl, s.db, s.config.JWT.Secret)
-	
-	// 5. Feature: Category
-	categoryRepository := categoryRepo.NewCategoryRepository(s.db)
-	categoryServ := categoryService.NewCategoryService(categoryRepository)
-	categoryHdl := categoryHandler.NewCategoryHTTPHandler(categoryServ, s.logger)
-	categoryHandler.RegisterCategoryRoutes(api, categoryHdl, s.db, s.config.JWT.Secret)
-
-	// Catch-all route for 404 Not Found
-	s.app.Use(func(c fiber.Ctx) error {
-		return response.Error(c, fiber.StatusNotFound, "route not found")
-	})
+	bootstrap.SetupRoutes(s.app, s.deps)
 }
 
 // Start runs the HTTP server.
@@ -162,88 +80,21 @@ func (s *Server) Start() error {
 	return s.app.Listen(addr)
 }
 
-// Shutdown gracefully stops the HTTP server.
+// Shutdown gracefully stops the HTTP server and closes shared infrastructure.
 func (s *Server) Shutdown() error {
 	s.logger.Info("shutting down HTTP server...")
 	if err := s.app.Shutdown(); err != nil {
 		return err
 	}
-	if err := s.storage.Close(); err != nil {
+	if err := s.deps.Storage.Close(); err != nil {
 		return err
 	}
-	return s.cache.Close()
+	return s.deps.Cache.Close()
 }
 
 // AppForTest returns the underlying Fiber app instance for testing purposes.
 func (s *Server) AppForTest() *fiber.App {
 	return s.app
-}
-
-func (s *Server) healthCheck(c fiber.Ctx) error {
-	dbStatus := "up"
-	cacheStatus := "disabled"
-
-	if s.cache.IsEnabled() {
-		cacheStatus = "up"
-	}
-
-	sqlDB, err := s.db.DB()
-	if err != nil {
-		s.logger.Error("failed to get sql.DB for health check", zap.Error(err))
-		dbStatus = "down"
-	} else {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		defer cancel()
-
-		if err := sqlDB.PingContext(ctx); err != nil {
-			s.logger.Error("database ping failed during health check", zap.Error(err))
-			dbStatus = "down"
-		}
-	}
-
-	status := "ok"
-	message := "service is healthy"
-	if dbStatus != "up" {
-		status = "degraded"
-		message = "service is unhealthy"
-	}
-
-	return c.Status(fiber.StatusOK).JSON(response.Response{
-		Meta: response.Meta{
-			Code:    fiber.StatusOK,
-			Message: message,
-		},
-		Data: fiber.Map{
-			"status":      status,
-			"service":     s.config.App.Name,
-			"environment": s.config.App.Env,
-			"database":    dbStatus,
-			"cache":       cacheStatus,
-			"storage":     s.storage.ProviderName(),
-		},
-	})
-}
-
-func (s *Server) cacheTTL() time.Duration {
-	ttlMinutes := s.config.Redis.CacheTTLMinutes
-	if ttlMinutes <= 0 {
-		ttlMinutes = 5
-	}
-	return time.Duration(ttlMinutes) * time.Minute
-}
-
-func (s *Server) storageBaseURL() string {
-	if s.config.Storage.BaseURL == "" {
-		return "/storage"
-	}
-	return s.config.Storage.BaseURL
-}
-
-func (s *Server) storageLocalPath() string {
-	if s.config.Storage.LocalPath == "" {
-		return "storage"
-	}
-	return s.config.Storage.LocalPath
 }
 
 // customErrorHandler converts AppError into the standard API response format.

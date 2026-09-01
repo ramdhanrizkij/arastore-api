@@ -14,7 +14,7 @@ import (
 	"github.com/ramdhanrizkij/arastore-api/internal/core/worker"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/auth/domain"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/auth/job"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	userDomain "github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/pkg/hash"
 	pkgjwt "github.com/ramdhanrizkij/arastore-api/pkg/jwt"
@@ -57,7 +57,7 @@ func (s *authService) Register(ctx context.Context, req *domain.RegisterRequest)
 		return nil, apperrors.WrapError(err, "failed to check existing user")
 	}
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "email already registered", nil)
+		return nil, apperrors.Conflict("email already registered")
 	}
 
 	// 2. Resolve default role.
@@ -75,7 +75,7 @@ func (s *authService) Register(ctx context.Context, req *domain.RegisterRequest)
 
 	// 4. Persist the new user.
 	roleID := role.ID
-	user := &model.User{
+	user := &userDomain.User{
 		Name:           req.Name,
 		Email:          req.Email,
 		Password:       hashedPwd,
@@ -258,7 +258,7 @@ func (s *authService) createRefreshToken(ctx context.Context, userID string) (st
 		refreshExpiryHours = 168
 	}
 
-	token := &model.RefreshToken{
+	token := &domain.RefreshToken{
 		UserID:    parsedUserID,
 		TokenHash: hashRefreshToken(rawToken),
 		ExpiresAt: time.Now().Add(time.Duration(refreshExpiryHours) * time.Hour),

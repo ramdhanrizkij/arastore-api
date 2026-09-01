@@ -9,8 +9,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/core/cache"
+	"github.com/ramdhanrizkij/arastore-api/internal/core/middleware"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/permission/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
@@ -90,7 +90,7 @@ func (s *permissionService) Create(ctx context.Context, req *domain.CreatePermis
 		return nil, apperrors.WrapError(err, "failed to check permission name")
 	}
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "permission name already exists", nil)
+		return nil, apperrors.Conflict("permission name already exists")
 	}
 
 	guardName := req.GuardName
@@ -98,7 +98,7 @@ func (s *permissionService) Create(ctx context.Context, req *domain.CreatePermis
 		guardName = "api"
 	}
 
-	perm := &model.Permission{
+	perm := &domain.Permission{
 		Name:        req.Name,
 		Description: req.Description,
 		GuardName:   guardName,
@@ -126,7 +126,7 @@ func (s *permissionService) Update(ctx context.Context, id string, req *domain.U
 			return nil, apperrors.WrapError(err, "failed to check permission name")
 		}
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "permission name already exists", nil)
+			return nil, apperrors.Conflict("permission name already exists")
 		}
 	}
 
@@ -158,8 +158,8 @@ func (s *permissionService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// toPermissionResponse maps a model.Permission to a domain.PermissionDetailResponse.
-func toPermissionResponse(p model.Permission) domain.PermissionDetailResponse {
+// toPermissionResponse maps a domain.Permission to a domain.PermissionDetailResponse.
+func toPermissionResponse(p domain.Permission) domain.PermissionDetailResponse {
 	return domain.PermissionDetailResponse{
 		ID:          p.ID.String(),
 		Name:        p.Name,
@@ -172,7 +172,7 @@ func toPermissionResponse(p model.Permission) domain.PermissionDetailResponse {
 
 type permissionListCacheEntry struct {
 	Permissions []domain.PermissionDetailResponse `json:"permissions"`
-	Meta        *response.PaginationMeta          `json:"meta"`
+	Meta         *response.PaginationMeta          `json:"meta"`
 }
 
 func permissionListCacheKey(pq *pagination.PaginationQuery) string {
@@ -199,5 +199,6 @@ func (s *permissionService) invalidatePermissionCache(ctx context.Context, inval
 		if err := s.cache.DeleteByPrefix(ctx, "roles:"); err != nil {
 			s.log.Warn("failed to invalidate role cache after permission mutation", zap.Error(err))
 		}
+		middleware.ClearPermissionCache()
 	}
 }

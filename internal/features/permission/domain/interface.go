@@ -3,19 +3,18 @@ package domain
 import (
 	"context"
 
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
 )
 
 // PermissionRepository defines the data-access contract for the permission feature.
 type PermissionRepository interface {
-	FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.Permission, int64, error)
-	FindByID(ctx context.Context, id string) (*model.Permission, error)
-	FindByName(ctx context.Context, name string) (*model.Permission, error)
-	FindByIDs(ctx context.Context, ids []string) ([]model.Permission, error)
-	Create(ctx context.Context, permission *model.Permission) error
-	Update(ctx context.Context, permission *model.Permission) error
+	FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]Permission, int64, error)
+	FindByID(ctx context.Context, id string) (*Permission, error)
+	FindByName(ctx context.Context, name string) (*Permission, error)
+	FindByIDs(ctx context.Context, ids []string) ([]Permission, error)
+	Create(ctx context.Context, permission *Permission) error
+	Update(ctx context.Context, permission *Permission) error
 	Delete(ctx context.Context, id string) error
 }
 

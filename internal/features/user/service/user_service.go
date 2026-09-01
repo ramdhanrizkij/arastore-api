@@ -13,7 +13,6 @@ import (
 	"github.com/ramdhanrizkij/arastore-api/internal/core/cache"
 	"github.com/ramdhanrizkij/arastore-api/internal/core/storage"
 	"github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/response"
@@ -103,7 +102,7 @@ func (s *userService) Create(ctx context.Context, req *domain.CreateUserRequest)
 		return nil, apperrors.WrapError(err, "failed to check email uniqueness")
 	}
 	if existing != nil {
-		return nil, apperrors.NewAppError(409, "email already exists", nil)
+		return nil, apperrors.Conflict("email already exists")
 	}
 
 	// Hash password.
@@ -114,7 +113,7 @@ func (s *userService) Create(ctx context.Context, req *domain.CreateUserRequest)
 
 	roleID, err := uuid.Parse(req.RoleID)
 	if err != nil {
-		return nil, apperrors.NewAppError(400, "invalid role_id format", err)
+		return nil, apperrors.BadRequestWith("invalid role_id format", err)
 	}
 
 	isActive := true
@@ -122,7 +121,7 @@ func (s *userService) Create(ctx context.Context, req *domain.CreateUserRequest)
 		isActive = *req.IsActive
 	}
 
-	user := &model.User{
+	user := &domain.User{
 		Name:           req.Name,
 		Email:          req.Email,
 		Password:       hashedPwd,
@@ -160,7 +159,7 @@ func (s *userService) Update(ctx context.Context, id string, req *domain.UpdateU
 			return nil, apperrors.WrapError(err, "failed to check email uniqueness")
 		}
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "email already exists", nil)
+			return nil, apperrors.Conflict("email already exists")
 		}
 	}
 
@@ -177,7 +176,7 @@ func (s *userService) Update(ctx context.Context, id string, req *domain.UpdateU
 
 	roleID, err := uuid.Parse(req.RoleID)
 	if err != nil {
-		return nil, apperrors.NewAppError(400, "invalid role_id format", err)
+		return nil, apperrors.BadRequestWith("invalid role_id format", err)
 	}
 	user.RoleID = &roleID
 	user.ProfilePicture = normalizeOptionalString(req.ProfilePicture)
@@ -214,7 +213,7 @@ func (s *userService) UpdateProfile(ctx context.Context, id string, req *domain.
 			return nil, apperrors.WrapError(err, "failed to check email uniqueness")
 		}
 		if existing != nil {
-			return nil, apperrors.NewAppError(409, "email already exists", nil)
+			return nil, apperrors.Conflict("email already exists")
 		}
 	}
 
@@ -239,7 +238,7 @@ func (s *userService) UpdateProfile(ctx context.Context, id string, req *domain.
 
 func (s *userService) Delete(ctx context.Context, currentUserID string, targetID string) error {
 	if currentUserID == targetID {
-		return apperrors.NewAppError(403, "cannot delete your own account", nil)
+		return apperrors.Forbidden("cannot delete your own account")
 	}
 
 	if _, err := s.repo.FindByID(ctx, targetID); err != nil {
@@ -280,7 +279,7 @@ func (s *userService) GetPermissions(ctx context.Context, userID string) ([]stri
 	return permissionNames, nil
 }
 
-func (s *userService) toUserDetailResponse(u model.User) domain.UserDetailResponse {
+func (s *userService) toUserDetailResponse(u domain.User) domain.UserDetailResponse {
 	roleInfo := domain.RoleInfo{}
 	if u.Role != nil {
 		roleInfo.ID = u.Role.ID.String()

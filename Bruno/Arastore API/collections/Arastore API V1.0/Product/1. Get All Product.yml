@@ -1,0 +1,94 @@
+info:
+  name: 1. Get All Product
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{BASE_URL}}/api/v1/products?page=1&per_page=10&sort=created_at&order=DESC&search="
+  params:
+    - name: page
+      value: "1"
+      type: query
+    - name: per_page
+      value: "10"
+      type: query
+    - name: sort
+      value: created_at
+      type: query
+    - name: order
+      value: DESC
+      type: query
+    - name: search
+      value: ""
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+examples:
+  - name: 200 - Success
+    request:
+      url: "{{BASE_URL}}/api/v1/products?page=1&per_page=10&sort=created_at&order=DESC&search="
+      method: GET
+      params:
+        - name: page
+          value: "1"
+          type: query
+        - name: per_page
+          value: "10"
+          type: query
+        - name: sort
+          value: created_at
+          type: query
+        - name: order
+          value: DESC
+          type: query
+        - name: search
+          value: ""
+          type: query
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:34:14 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "508"
+      body:
+        type: json
+        data: |-
+          {
+            "meta": {
+              "code": 200,
+              "message": "Product retrieved successfully"
+            },
+            "data": [
+              {
+                "id": "dad464e8-fa9e-4e3f-83d3-83d44d0a5b8d",
+                "category_id": "186ef218-bab3-4dd2-819e-e94d51bdecd3",
+                "sku": "FOOD-001",
+                "name": "Kopi Arabica Gayo 250g",
+                "description": "Biji kopi arabica single origin Gayo, roasted medium",
+                "price": 85000,
+                "stock": 200,
+                "weight": 0.25,
+                "status": "ACTIVE",
+                "created_at": "2026-08-28T20:03:43+07:00",
+                "updated_at": "2026-08-28T20:03:43+07:00"
+              }
+            ],
+            "pagination": {
+              "current_page": 1,
+              "per_page": 10,
+              "total_items": 1,
+              "total_pages": 1
+            }
+          }

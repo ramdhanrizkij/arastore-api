@@ -3,17 +3,18 @@ package domain
 import (
 	"context"
 
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	roleDomain "github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
+	userDomain "github.com/ramdhanrizkij/arastore-api/internal/features/user/domain"
 )
 
 // AuthRepository defines the data-access contract for the auth feature.
 // Implementations live in the repository layer and use GORM.
 type AuthRepository interface {
-	FindUserByEmail(ctx context.Context, email string) (*model.User, error)
-	CreateUser(ctx context.Context, user *model.User) error
-	FindRoleByName(ctx context.Context, name string) (*model.Role, error)
-	CreateRefreshToken(ctx context.Context, token *model.RefreshToken) error
-	FindRefreshTokenByHash(ctx context.Context, tokenHash string) (*model.RefreshToken, error)
+	FindUserByEmail(ctx context.Context, email string) (*userDomain.User, error)
+	CreateUser(ctx context.Context, user *userDomain.User) error
+	FindRoleByName(ctx context.Context, name string) (*roleDomain.Role, error)
+	CreateRefreshToken(ctx context.Context, token *RefreshToken) error
+	FindRefreshTokenByHash(ctx context.Context, tokenHash string) (*RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, id string) error
 	CleanupExpiredTokens(ctx context.Context) error
 }

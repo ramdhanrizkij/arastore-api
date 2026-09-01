@@ -1,12 +1,12 @@
 package seeder
 
 import (
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	categoryDomain "github.com/ramdhanrizkij/arastore-api/internal/features/category/domain"
 	"gorm.io/gorm"
 )
 
 func SeedCategories(db *gorm.DB) error {
-	categories := []model.Category{
+	categories := []categoryDomain.Category{
 		{Name: "Electronics", Description: "Perangkat elektronik dan gadget"},
 		{Name: "Fashion", Description: "Pakaian dan aksesoris fashion"},
 		{Name: "Food & Beverage", Description: "Makanan dan minuman"},

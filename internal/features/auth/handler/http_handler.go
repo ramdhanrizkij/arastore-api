@@ -26,13 +26,15 @@ func NewAuthHTTPHandler(service domain.AuthService, log *zap.Logger) *AuthHTTPHa
 
 // Register handles user registration.
 func (h *AuthHTTPHandler) Register(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.RegisterRequest](c)
-	if err != nil {
-		// ParseAndValidate already sent the 422 response.
-		return nil
+	var req domain.RegisterRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	resp, err := h.service.Register(c.Context(), req)
+	resp, err := h.service.Register(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -42,12 +44,15 @@ func (h *AuthHTTPHandler) Register(c fiber.Ctx) error {
 
 // Login handles user authentication.
 func (h *AuthHTTPHandler) Login(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.LoginRequest](c)
-	if err != nil {
-		return nil
+	var req domain.LoginRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	resp, err := h.service.Login(c.Context(), req)
+	resp, err := h.service.Login(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -57,12 +62,15 @@ func (h *AuthHTTPHandler) Login(c fiber.Ctx) error {
 
 // Refresh handles token refresh.
 func (h *AuthHTTPHandler) Refresh(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.RefreshTokenRequest](c)
-	if err != nil {
-		return nil
+	var req domain.RefreshTokenRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	resp, err := h.service.Refresh(c.Context(), req)
+	resp, err := h.service.Refresh(c.Context(), &req)
 	if err != nil {
 		return h.handleError(c, err)
 	}
@@ -72,12 +80,15 @@ func (h *AuthHTTPHandler) Refresh(c fiber.Ctx) error {
 
 // Logout handles user logout.
 func (h *AuthHTTPHandler) Logout(c fiber.Ctx) error {
-	req, err := validator.ParseAndValidate[domain.LogoutRequest](c)
-	if err != nil {
-		return nil
+	var req domain.LogoutRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body")
+	}
+	if errs := validator.Validate(req); errs != nil {
+		return response.ValidationError(c, errs)
 	}
 
-	if err := h.service.Logout(c.Context(), req); err != nil {
+	if err := h.service.Logout(c.Context(), &req); err != nil {
 		return h.handleError(c, err)
 	}
 

@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/ramdhanrizkij/arastore-api/internal/features/role/domain"
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
 	apperrors "github.com/ramdhanrizkij/arastore-api/internal/shared/errors"
 	"github.com/ramdhanrizkij/arastore-api/internal/shared/pagination"
 )
@@ -23,11 +22,11 @@ func NewRoleRepository(db *gorm.DB) domain.RoleRepository {
 	return &roleRepository{db: db}
 }
 
-func (r *roleRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]model.Role, int64, error) {
-	var roles []model.Role
+func (r *roleRepository) FindAll(ctx context.Context, pq *pagination.PaginationQuery) ([]domain.Role, int64, error) {
+	var roles []domain.Role
 	var total int64
 
-	query := r.db.WithContext(ctx).Model(&model.Role{})
+	query := r.db.WithContext(ctx).Model(&domain.Role{})
 
 	if pq.Search != "" {
 		query = query.Where("name ILIKE ?", "%"+pq.Search+"%")
@@ -48,8 +47,8 @@ func (r *roleRepository) FindAll(ctx context.Context, pq *pagination.PaginationQ
 	return roles, total, nil
 }
 
-func (r *roleRepository) FindByID(ctx context.Context, id string) (*model.Role, error) {
-	var role model.Role
+func (r *roleRepository) FindByID(ctx context.Context, id string) (*domain.Role, error) {
+	var role domain.Role
 	result := r.db.WithContext(ctx).
 		Preload("Permissions").
 		Where("id = ?", id).
@@ -64,8 +63,8 @@ func (r *roleRepository) FindByID(ctx context.Context, id string) (*model.Role, 
 	return &role, nil
 }
 
-func (r *roleRepository) FindByName(ctx context.Context, name string) (*model.Role, error) {
-	var role model.Role
+func (r *roleRepository) FindByName(ctx context.Context, name string) (*domain.Role, error) {
+	var role domain.Role
 	result := r.db.WithContext(ctx).Where("name = ?", name).First(&role)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -76,14 +75,14 @@ func (r *roleRepository) FindByName(ctx context.Context, name string) (*model.Ro
 	return &role, nil
 }
 
-func (r *roleRepository) Create(ctx context.Context, role *model.Role) error {
+func (r *roleRepository) Create(ctx context.Context, role *domain.Role) error {
 	if err := r.db.WithContext(ctx).Create(role).Error; err != nil {
 		return apperrors.WrapError(err, "failed to create role")
 	}
 	return nil
 }
 
-func (r *roleRepository) Update(ctx context.Context, role *model.Role) error {
+func (r *roleRepository) Update(ctx context.Context, role *domain.Role) error {
 	if err := r.db.WithContext(ctx).Save(role).Error; err != nil {
 		return apperrors.WrapError(err, "failed to update role")
 	}
@@ -91,7 +90,7 @@ func (r *roleRepository) Update(ctx context.Context, role *model.Role) error {
 }
 
 func (r *roleRepository) Delete(ctx context.Context, id string) error {
-	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&model.Role{})
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&domain.Role{})
 	if result.Error != nil {
 		return apperrors.WrapError(result.Error, "failed to delete role")
 	}
@@ -106,16 +105,16 @@ func (r *roleRepository) Delete(ctx context.Context, id string) error {
 func (r *roleRepository) AssignPermissions(ctx context.Context, roleID string, permissionIDs []string) error {
 	roleUUID, err := uuid.Parse(roleID)
 	if err != nil {
-		return apperrors.NewAppError(400, "invalid role ID", err)
+		return apperrors.BadRequestWith("invalid role ID", err)
 	}
 
-	rows := make([]model.RolePermission, 0, len(permissionIDs))
+	rows := make([]domain.RolePermission, 0, len(permissionIDs))
 	for _, pid := range permissionIDs {
 		permUUID, err := uuid.Parse(pid)
 		if err != nil {
-			return apperrors.NewAppError(400, "invalid permission ID: "+pid, err)
+			return apperrors.BadRequestWith("invalid permission ID: "+pid, err)
 		}
-		rows = append(rows, model.RolePermission{
+		rows = append(rows, domain.RolePermission{
 			RoleID:       roleUUID,
 			PermissionID: permUUID,
 		})
@@ -133,7 +132,7 @@ func (r *roleRepository) AssignPermissions(ctx context.Context, roleID string, p
 func (r *roleRepository) RemovePermissions(ctx context.Context, roleID string, permissionIDs []string) error {
 	if err := r.db.WithContext(ctx).
 		Where("role_id = ? AND permission_id IN ?", roleID, permissionIDs).
-		Delete(&model.RolePermission{}).Error; err != nil {
+		Delete(&domain.RolePermission{}).Error; err != nil {
 		return apperrors.WrapError(err, "failed to remove permissions")
 	}
 	return nil

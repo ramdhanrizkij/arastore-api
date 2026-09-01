@@ -53,6 +53,22 @@ func NewAppError(code int, message string, err error) *AppError {
 	return &AppError{Code: code, Message: message, Err: err}
 }
 
+// ── Factory helpers ───────────────────────────────────────────────────────────
+//
+// These helpers replace ad-hoc NewAppError(<http-code>, "msg", nil) call sites
+// scattered across feature code, removing magic HTTP status numbers and making
+// intent explicit. Use the *With variants when you want to preserve an
+// underlying cause (e.g. a parse error) for logging via Unwrap.
+
+func BadRequest(msg string) *AppError            { return NewAppError(http.StatusBadRequest, msg, nil) }
+func BadRequestWith(msg string, err error) *AppError { return NewAppError(http.StatusBadRequest, msg, err) }
+func Unauthorized(msg string) *AppError          { return NewAppError(http.StatusUnauthorized, msg, nil) }
+func Forbidden(msg string) *AppError             { return NewAppError(http.StatusForbidden, msg, nil) }
+func NotFound(msg string) *AppError              { return NewAppError(http.StatusNotFound, msg, nil) }
+func Conflict(msg string) *AppError             { return NewAppError(http.StatusConflict, msg, nil) }
+func Unprocessable(msg string) *AppError         { return NewAppError(http.StatusUnprocessableEntity, msg, nil) }
+func Internal(msg string) *AppError             { return NewAppError(http.StatusInternalServerError, msg, nil) }
+
 // WrapError wraps any error as a 500 Internal Server Error AppError,
 // preserving the original cause for logging while surfacing only the
 // provided message to callers.

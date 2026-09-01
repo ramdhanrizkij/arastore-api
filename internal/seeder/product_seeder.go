@@ -1,27 +1,28 @@
 package seeder
 
 import (
-	"github.com/ramdhanrizkij/arastore-api/internal/model"
+	categoryDomain "github.com/ramdhanrizkij/arastore-api/internal/features/category/domain"
+	productDomain "github.com/ramdhanrizkij/arastore-api/internal/features/product/domain"
 	"gorm.io/gorm"
 )
 
 func SeedProducts(db *gorm.DB) error {
-	var electronics model.Category
+	var electronics categoryDomain.Category
 	if err := db.Where("name = ? ", "Electronics").First(&electronics).Error; err != nil {
 		return err
 	}
 
-	var fashion model.Category
+	var fashion categoryDomain.Category
 	if err := db.Where("name = ?", "Fashion").First(&fashion).Error; err != nil {
 		return err
 	}
 
-	var food model.Category
+	var food categoryDomain.Category
 	if err := db.Where("name = ?", "Food & Beverage").First(&food).Error; err != nil {
 		return err
 	}
 
-	products := []model.Product{
+	products := []productDomain.Product{
 		{
 			CategoryID:  electronics.ID,
 			SKU:         "ELEC-001",
@@ -30,7 +31,7 @@ func SeedProducts(db *gorm.DB) error {
 			Price:       7499000,
 			Stock:       25,
 			Weight:      1.5,
-			Status:      model.ProductStatusActive,
+			Status:      productDomain.ProductStatusActive,
 		},
 		{
 			CategoryID:  electronics.ID,
@@ -40,7 +41,7 @@ func SeedProducts(db *gorm.DB) error {
 			Price:       899000,
 			Stock:       50,
 			Weight:      0.1,
-			Status:      model.ProductStatusActive,
+			Status:      productDomain.ProductStatusActive,
 		},
 		{
 			CategoryID:  fashion.ID,
@@ -50,7 +51,7 @@ func SeedProducts(db *gorm.DB) error {
 			Price:       249000,
 			Stock:       100,
 			Weight:      0.3,
-			Status:      model.ProductStatusActive,
+			Status:      productDomain.ProductStatusActive,
 		},
 		{
 			CategoryID:  fashion.ID,
@@ -60,7 +61,7 @@ func SeedProducts(db *gorm.DB) error {
 			Price:       1299000,
 			Stock:       30,
 			Weight:      0.8,
-			Status:      model.ProductStatusDraft,
+			Status:      productDomain.ProductStatusDraft,
 		},
 		{
 			CategoryID:  food.ID,
@@ -70,13 +71,13 @@ func SeedProducts(db *gorm.DB) error {
 			Price:       85000,
 			Stock:       200,
 			Weight:      0.25,
-			Status:      model.ProductStatusActive,
+			Status:      productDomain.ProductStatusActive,
 		},
 	}
 
 	for _, product := range products {
 		var count int64
-		db.Model(&model.Product{}).Where("sku = ? ", product.SKU).Count(&count)
+		db.Model(&productDomain.Product{}).Where("sku = ? ", product.SKU).Count(&count)
 		if count == 0 {
 			if err := db.Create(&product).Error; err != nil {
 				return err

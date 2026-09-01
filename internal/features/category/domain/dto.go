@@ -1,12 +1,12 @@
 package domain
 
 type CreateCategoryRequest struct {
-	Name        string `json:"name"`
+	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 }
 
 type UpdateCategoryRequest struct {
-	Name        string `json:"name"`
+	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 }
 

@@ -1,0 +1,56 @@
+info:
+  name: 2. Get Category By ID
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{BASE_URL}}/api/v1/categories/:id"
+  params:
+    - name: id
+      value: 9a6315fa-66a5-49df-9b45-906e2f023f20
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+examples:
+  - name: 200 - Success
+    request:
+      url: "{{BASE_URL}}/api/v1/categories/:id"
+      method: GET
+      params:
+        - name: id
+          value: 9a6315fa-66a5-49df-9b45-906e2f023f20
+          type: path
+    response:
+      status: 200
+      statusText: OK
+      headers:
+        - name: date
+          value: Fri, 28 Aug 2026 13:37:23 GMT
+        - name: content-type
+          value: application/json; charset=utf-8
+        - name: content-length
+          value: "271"
+      body:
+        type: json
+        data: |-
+          {
+            "meta": {
+              "code": 200,
+              "message": "Category retrieved successfully"
+            },
+            "data": {
+              "id": "9a6315fa-66a5-49df-9b45-906e2f023f20",
+              "name": "Electronics",
+              "description": "Perangkat elektronik dan gadget",
+              "created_at": "28286-08-28T20:03:43+07:00",
+              "updated_at": "28286-08-28T20:03:43+07:00"
+            }
+          }

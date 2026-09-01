@@ -46,8 +46,8 @@ func TestHealthCheck(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&result)
 
 	assert.NoError(t, err)
-	assert.Equal(t, float64(http.StatusOK), result["meta"].(map[string]interface{})["code"])
-	assert.Equal(t, "service is healthy", result["meta"].(map[string]interface{})["message"])
+	assert.Equal(t, true, result["success"])
+	assert.Equal(t, "service is healthy", result["message"])
 
 	data := result["data"].(map[string]interface{})
 	assert.Equal(t, "ok", data["status"])
